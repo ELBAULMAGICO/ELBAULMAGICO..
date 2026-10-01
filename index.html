@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Baúl Mágico - E-Commerce & Admin</title>
+    <!-- SDK de Firebase (Firestore) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; scroll-behavior: smooth; }
+        body { background-color: #faf7f2; color: #262626; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
+        
+        /* Header */
+        header { position: sticky; top: 0; z-index: 40; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); border-bottom: 1px solid #fef3c7; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03); }
+        .max-w-7xl { max-width: 80rem; margin: 0 auto; padding: 0 1.5rem; }
+        .header-content { height: 5rem; display: flex; align-items: center; justify-content: space-between; }
+        
+        .logo-box { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; user-select: none; }
+        .logo-icon { width: 3.25rem; height: 3.25rem; background: linear-gradient(135deg, #f59e0b, #d97706, #78350f); border-radius: 1rem; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35); border: 1.5px solid #fef08a; position: relative; }
+        .logo-title { font-size: 1.25rem; font-weight: 700; color: #171717; line-height: 1.2; }
+        .logo-sub { font-size: 0.7rem; color: #9a3412; font-weight: 600; letter-spacing: 0.025em; }
+
+        nav { display: flex; gap: 2rem; font-weight: 500; color: #525252; }
+        nav a { text-decoration: none; color: inherit; transition: color 0.2s; }
+        nav a:hover { color: #78350f; }
+
+        .header-actions { display: flex; align-items: center; gap: 1rem; }
+        .icon-btn { width: 2.5rem; height: 2.5rem; border-radius: 9999px; background: #fffbeb; color: #78350f; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .icon-btn:hover { background: #fef3c7; }
+        .cart-btn { width: 2.75rem; height: 2.75rem; background: #78350f; color: white; border-radius: 9999px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; position: relative; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .cart-btn:hover { background: #451a03; }
+        .badge { position: absolute; top: -0.25rem; right: -0.25rem; background: #dc2626; color: white; font-size: 0.75rem; width: 1.25rem; height: 1.25rem; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .hidden { display: none !important; }
+
+        /* Hero Section */
+        .hero { max-width: 80rem; margin: 0 auto; padding: 4rem 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+        @media (max-width: 768px) { .hero { grid-template-columns: 1fr; } nav { display: none; } }
+        
+        .tag { display: inline-flex; align-items: center; gap: 0.5rem; background: #fef3c7; color: #78350f; padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid rgba(254, 243, 199, 0.8); }
+        .hero h2 { font-size: 3.5rem; font-weight: 800; color: #111827; letter-spacing: -0.025em; line-height: 1.1; margin: 1rem 0; }
+        .hero h2 span { color: #78350f; }
+        .hero p { font-size: 1.125rem; color: #525252; line-height: 1.6; margin-bottom: 2rem; max-width: 36rem; }
+        
+        .btn-group { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .btn-primary { background: #5c2813; color: white; font-weight: 600; padding: 1rem 1.75rem; border-radius: 1rem; text-decoration: none; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); transition: background 0.2s; cursor: pointer; border: none; }
+        .btn-primary:hover { background: #451a03; }
+        .btn-whatsapp { background: #1b9e54; color: white; font-weight: 600; padding: 1rem 1.75rem; border-radius: 1rem; text-decoration: none; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); transition: background 0.2s; cursor: pointer; border: none; }
+        .btn-whatsapp:hover { background: #147a42; }
+
+        /* Hero Card */
+        .hero-card-container { display: flex; justify-content: center; }
+        .hero-card { background: white; padding: 2rem; border-radius: 2.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.08); border: 1px solid #fef3c7; width: 100%; max-width: 22rem; text-align: center; }
+        .hero-card-inner { width: 100%; height: 13rem; background: #fdf8f2; border-radius: 1.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; border: 1px solid #fef3c7; position: relative; }
+        
+        .hero-logo-large { width: 6.5rem; height: 6.5rem; background: linear-gradient(135deg, #f59e0b, #d97706, #78350f); border-radius: 1.75rem; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 3rem; box-shadow: 0 8px 20px rgba(217, 119, 6, 0.4); border: 2px solid #fef08a; position: relative; }
+        
+        .hero-card h3 { font-size: 1.25rem; font-weight: 700; color: #171717; margin-bottom: 0.25rem; }
+        .hero-card p { font-size: 0.75rem; color: #737373; margin-bottom: 1.5rem; }
+        .hero-card-footer { display: flex; justify-content: center; gap: 1.5rem; padding-top: 1rem; border-top: 1px solid #f5f5f5; font-size: 0.75rem; font-weight: 600; color: #525252; }
+        .hero-card-footer span { display: flex; align-items: center; gap: 0.35rem; }
+
+        /* Sections */
+        .section { max-width: 80rem; margin: 0 auto; padding: 4rem 1.5rem; border-top: 1px solid #fef3c7; }
+        .section-header { text-align: center; max-width: 48rem; margin: 0 auto 3rem auto; }
+        .section-header h2 { font-size: 2.25rem; font-weight: 700; color: #171717; margin-bottom: 0.75rem; }
+        .section-header p { color: #525252; }
+
+        /* Products Grid */
+        .products-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1.5rem; }
+        .filter-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .filter-btn { padding: 0.6rem 1.25rem; border-radius: 9999px; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; border: 1px solid #fde68a; background: white; color: #404040; }
+        .filter-btn.active { background: #78350f; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-color: #78350f; }
+
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+        @media(max-width: 1024px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } }
+        @media(max-width: 640px) { .grid-4 { grid-template-columns: 1fr; } }
+
+        .prod-card { background: white; border-radius: 1.5rem; padding: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #fef3c7; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s; }
+        .prod-card:hover { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .prod-img-box { height: 14rem; border-radius: 1rem; overflow: hidden; margin-bottom: 1rem; background: #fffbeb; position: relative; }
+        .prod-img-box img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+        .prod-card:hover .prod-img-box img { transform: scale(1.05); }
+        .prod-badge-tag { position: absolute; top: 0.75rem; left: 0.75rem; background: #78350f; color: #fef3c7; font-size: 0.7rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 9999px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .prod-cat { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #78350f; letter-spacing: 0.05em; }
+        .prod-name { font-weight: 700; color: #171717; font-size: 1rem; margin: 0.25rem 0 0.5rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .prod-price { font-size: 1.25rem; font-weight: 800; color: #171717; margin-bottom: 1rem; }
+        .prod-actions { display: flex; gap: 0.5rem; }
+        .btn-add { flex-grow: 1; background: #78350f; color: white; border: none; font-weight: 600; padding: 0.75rem; border-radius: 0.75rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.875rem; transition: background 0.2s; }
+        .btn-add:hover { background: #451a03; }
+        .btn-w-icon { width: 2.75rem; height: 2.75rem; background: #1b9e54; color: white; border: none; border-radius: 0.75rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: background 0.2s; }
+        .btn-w-icon:hover { background: #147a42; }
+
+        /* Footer */
+        footer { background: #0a0a0a; color: white; padding: 4rem 1.5rem 3rem 1.5rem; border-top: 1px solid #262626; }
+        .footer-grid { max-width: 80rem; margin: 0 auto 3rem auto; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; }
+        @media(max-width: 768px) { .footer-grid { grid-template-columns: 1fr; } }
+        .footer-logo { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; cursor: pointer; user-select: none; width: fit-content; }
+        .footer-logo-icon { width: 3.25rem; height: 3.25rem; background: linear-gradient(135deg, #f59e0b, #d97706, #78350f); border-radius: 1rem; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35); border: 1.5px solid #fef08a; position: relative; }
+        .footer-socials { display: flex; gap: 1rem; margin-top: 1rem; }
+        .social-icon { width: 2.25rem; height: 2.25rem; border-radius: 9999px; background: #171717; color: #a3a3a3; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s; }
+        .social-icon:hover { background: #78350f; color: white; }
+        .footer-links h4 { font-size: 1rem; font-weight: 700; color: #fde68a; margin-bottom: 1rem; }
+        .footer-links ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+        .footer-links a { color: #a3a3a3; text-decoration: none; font-size: 0.875rem; transition: color 0.2s; }
+        .footer-links a:hover { color: white; }
+        .footer-bottom { max-width: 80rem; margin: 0 auto; padding-top: 2rem; border-top: 1px solid #171717; text-align: center; font-size: 0.75rem; color: #737373; }
+
+        /* Modals & Drawers */
+        .modal-bg { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+        .drawer-container { position: fixed; inset: 0; z-index: 50; overflow: hidden; display: flex; justify-content: flex-end; }
+        .drawer-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .drawer-content { position: relative; width: 100%; max-width: 28rem; background: white; height: 100%; display: flex; flex-direction: column; justify-content: space-between; z-index: 10; box-shadow: -10px 0 25px rgba(0,0,0,0.15); }
+        .modal-card { background: white; border-radius: 1.5rem; padding: 2rem; width: 100%; max-width: 30rem; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid #fef3c7; }
+        .close-btn { background: none; border: none; cursor: pointer; font-size: 1.25rem; color: #737373; }
+        .close-btn:hover { color: #171717; }
+        
+        input, select { width: 100%; padding: 0.75rem 1rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: 0.75rem; font-size: 0.875rem; outline: none; transition: ring 0.2s; }
+        input:focus, select:focus { ring: 2px solid #78350f; border-color: #78350f; }
+        label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #525252; margin-bottom: 0.35rem; }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+            padding: 0.5rem 0.9rem;
+            border-radius: 0.6rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            box-shadow: 0 1px 2px rgba(220, 38, 38, 0.05);
+        }
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            border-color: #f87171;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(220, 38, 38, 0.15);
+        }
+        .btn-reset {
+            background: #fffbeb;
+            color: #78350f;
+            border: 1px solid #fde68a;
+            padding: 0.4rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.2s;
+        }
+        .btn-reset:hover { background: #fef3c7; color: #451a03; }
+        .toast-notification {
+            position: fixed; bottom: 2rem; right: 2rem; background: #1f2937; color: white; padding: 0.85rem 1.25rem; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 500; display: flex; align-items: center; gap: 0.6rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); z-index: 1000; opacity: 0; transform: translateY(1rem); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none;
+        }
+        .toast-notification.show { opacity: 1; transform: translateY(0); }
+        .toast-success { background: #064e3b; border-left: 4px solid #10b981; }
+        .toast-danger { background: #7f1d1d; border-left: 4px solid #ef4444; }
+        .toast-info { background: #1e293b; border-left: 4px solid #38bdf8; }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="max-w-7xl">
+            <div class="header-content">
+                <div id="logo-container" class="logo-box" title="Haz 3 clics rápidos para abrir el panel de administración">
+                    <div class="logo-icon" title="El Baúl Mágico">🎁✨</div>
+                    <div>
+                        <h1 class="logo-title">El Baúl Mágico</h1>
+                        <p class="logo-sub">Tecnología • Blanquería • Bazar</p>
+                    </div>
+                </div>
+
+                <nav>
+                    <a href="#inicio">Inicio</a>
+                    <a href="#productos">Productos</a>
+                    <a href="#contacto">Contacto</a>
+                </nav>
+
+                <div class="header-actions">
+                    <button onclick="toggleSearchModal()" class="icon-btn" title="Buscar productos">🔍</button>
+                    <button onclick="toggleCart()" class="cart-btn" title="Carrito">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 1.25rem; height: 1.25rem;">
+                            <circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle>
+                            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+                        </svg>
+                        <span id="cart-badge" class="badge hidden">0</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main>
+        <section id="inicio" class="hero">
+            <div>
+                <span class="tag">✨ <span>Descubrí la magia en casa</span></span>
+                <h2>Todo lo que imaginás en <span>El Baúl Mágico</span></h2>
+                <p>Sorprende tu hogar con nuestra selección exclusiva de tecnología, blanquería de alta gama y artículos de bazar. ¿Tenés dudas? ¡Escribinos directamente al WhatsApp!</p>
+                <div class="btn-group">
+                    <a href="#productos" class="btn-primary">📦 <span>Ver Catálogo Completo</span></a>
+                    <a id="hero-whatsapp-btn" href="https://wa.me/5491112345678?text=Hola,%20quiero%20consultar%20sobre%20los%20productos%20de%20El%20Baúl%20Mágico" target="_blank" class="btn-whatsapp">💬 <span>Consultar por WhatsApp</span></a>
+                </div>
+            </div>
+            
+            <div class="hero-card-container">
+                <div class="hero-card">
+                    <div class="hero-card-inner">
+                        <div class="hero-logo-large">🎁✨</div>
+                    </div>
+                    <h3>¡El Baúl de los Tesoros!</h3>
+                    <p>Tecnología, blanquería y bazar en un solo lugar</p>
+                    <div class="hero-card-footer">
+                        <span>🛡️ Garantía</span>
+                        <span>🚚 Envíos rápidos</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="productos" class="section">
+            <div class="products-header">
+                <div>
+                    <span style="color: #78350f; font-weight: 600; font-size: 0.875rem; text-transform: uppercase;">Catálogo Mágico</span>
+                    <h2 style="font-size: 2.25rem; font-weight: 700; color: #171717; margin-top: 0.25rem;">Nuestros Tesoros Disponibles</h2>
+                </div>
+                <div class="filter-buttons" id="filter-buttons">
+                    <button onclick="filterProducts('Todos')" class="filter-btn active">Todos</button>
+                    <button onclick="filterProducts('Tecnología')" class="filter-btn">Tecnología</button>
+                    <button onclick="filterProducts('Blanquería')" class="filter-btn">Blanquería</button>
+                    <button onclick="filterProducts('Bazar')" class="filter-btn">Bazar</button>
+                </div>
+            </div>
+            <div id="product-grid" class="grid-4"></div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer id="contacto">
+        <div class="footer-grid">
+            <div>
+                <div id="footer-logo-container" class="footer-logo" title="Haz 3 clics rápidos para abrir el panel de administración">
+                    <div class="footer-logo-icon">🎁✨</div>
+                    <span style="font-weight: 700; font-size: 1.125rem;">El Baúl Mágico</span>
+                </div>
+                <p style="color: #a3a3a3; font-size: 0.875rem; line-height: 1.5; max-width: 20rem;">Tu tienda de confianza en tecnología, blanquería y bazar.</p>
+                <div class="footer-socials">
+                    <a href="#" class="social-icon">💬</a><a href="#" class="social-icon">📸</a><a href="#" class="social-icon">📘</a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <h4>Enlaces Rápidos</h4>
+                <ul>
+                    <li><a href="#inicio">Inicio</a></li>
+                    <li><a href="#productos">Catálogo</a></li>
+                    <li><a href="javascript:void(0)" onclick="openAdminLogin()">🔒 Panel Admin</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Categorías</h4>
+                <ul>
+                    <li><a href="#productos" onclick="filterProducts('Tecnología')">Tecnología</a></li>
+                    <li><a href="#productos" onclick="filterProducts('Blanquería')">Blanquería</a></li>
+                    <li><a href="#productos" onclick="filterProducts('Bazar')">Bazar</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">&copy; 2026 El Baúl Mágico. Todos los derechos reservados.</div>
+    </footer>
+
+    <!-- CART DRAWER -->
+    <div id="cart-drawer" class="drawer-container hidden">
+        <div onclick="toggleCart()" class="drawer-backdrop"></div>
+        <div class="drawer-content">
+            <div style="padding: 1.5rem; background: #78350f; color: white; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;"><span>🛍️</span><h3 style="font-weight: 700; font-size: 1.125rem;">Tu Carrito Mágico</h3></div>
+                <button onclick="toggleCart()" class="close-btn" style="color: white;">✕</button>
+            </div>
+            <div id="cart-items" style="padding: 1.5rem; flex-grow: 1; overflow-y: auto;"></div>
+            <div style="padding: 1.5rem; background: #fffbeb; border-top: 1px solid #fef3c7;">
+                <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.125rem; margin-bottom: 1rem;">
+                    <span>Total:</span><span id="cart-total" style="color: #78350f;">$0</span>
+                </div>
+                <button onclick="checkoutWhatsApp()" class="btn-whatsapp" style="width: 100%; justify-content: center; border-radius: 0.75rem; padding: 0.875rem;">💬 <span>Enviar pedido por WhatsApp</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEARCH MODAL -->
+    <div id="search-modal" class="modal-bg hidden" style="align-items: flex-start; padding-top: 5rem;">
+        <div class="modal-card">
+            <button onclick="toggleSearchModal()" class="close-btn" style="position: absolute; top: 1rem; right: 1rem;">✕</button>
+            <h3 style="font-weight: 700; font-size: 1.125rem; margin-bottom: 1rem;">Buscar Tesoros</h3>
+            <div style="position: relative;">
+                <span style="position: absolute; left: 1rem; top: 0.85rem; color: #a3a3a3;">🔍</span>
+                <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="Escribe el nombre del producto..." style="padding-left: 2.75rem;">
+            </div>
+            <div id="search-results" style="margin-top: 1rem; max-height: 16rem; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- ADMIN LOGIN MODAL -->
+    <div id="admin-login-modal" class="modal-bg hidden">
+        <div class="modal-card" style="text-align: center;">
+            <button onclick="closeAdminLogin()" class="close-btn" style="position: absolute; top: 1rem; right: 1rem;">✕</button>
+            <div style="width: 3.5rem; height: 3.5rem; background: #78350f; color: white; border-radius: 1rem; margin: 0 auto 1rem auto; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">🔒</div>
+            <h3 style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.25rem;">Panel de Administración</h3>
+            <p style="font-size: 0.75rem; color: #737373; margin-bottom: 1.5rem;">Ingresa tus credenciales</p>
+            <form onsubmit="handleAdminLogin(event)" style="text-align: left; display: flex; flex-direction: column; gap: 1rem;">
+                <div><label>Usuario</label><input type="text" id="admin-user-input" required></div>
+                <div><label>Contraseña</label><input type="password" id="admin-pass-input" required></div>
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; border-radius: 0.75rem; margin-top: 0.5rem;">Ingresar al Panel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL MODAL -->
+    <div id="admin-panel-modal" class="modal-bg hidden">
+        <div class="modal-card" style="max-width: 56rem; height: 85vh; display: flex; flex-direction: column; padding: 0; overflow: hidden;">
+            <div style="padding: 1.5rem; background: #78350f; color: white; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-weight: 700; font-size: 1.125rem;">Panel de Gestión - El Baúl Mágico</h3>
+                <button onclick="closeAdminPanel()" class="close-btn" style="color: white;">✕</button>
+            </div>
+            <div style="padding: 1.5rem; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 1.5rem; background: #faf7f2;">
+                <!-- Config -->
+                <div style="background: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid #fef3c7;">
+                    <h4 style="font-weight: 700; margin-bottom: 1rem; color: #171717;">Configuración General</h4>
+                    <form onsubmit="saveSettings(event)" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                        <div><label>Nuevo Usuario</label><input type="text" id="set-username"></div>
+                        <div><label>Nueva Contraseña</label><input type="password" id="set-password" placeholder="Opcional"></div>
+                        <div><label>WhatsApp</label><input type="text" id="set-whatsapp"></div>
+                        <div style="grid-column: span 3; display: flex; justify-content: flex-end;"><button type="submit" class="btn-primary" style="padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem;">Guardar</button></div>
+                    </form>
+                </div>
+                <!-- Add product -->
+                <div style="background: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid #fef3c7;">
+                    <h4 style="font-weight: 700; margin-bottom: 1rem; color: #171717;">Agregar Producto</h4>
+                    <form onsubmit="handleAddProduct(event)" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 1rem;">
+                        <div><label>Nombre</label><input type="text" id="new-prod-name" required></div>
+                        <div><label>Categoría</label><select id="new-prod-cat"><option value="Tecnología">Tecnología</option><option value="Blanquería">Blanquería</option><option value="Bazar">Bazar</option></select></div>
+                        <div><label>Precio ($)</label><input type="number" id="new-prod-price" required></div>
+                        <div><label>Imagen</label><input type="file" id="new-prod-file" accept="image/*" required style="padding: 0.4rem; font-size: 0.7rem;"></div>
+                        <div style="grid-column: span 4; display: flex; justify-content: flex-end;"><button type="submit" class="btn-primary" style="padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem;">Añadir Producto</button></div>
+                    </form>
+                </div>
+                <!-- Delete products -->
+                <div style="background: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid #fef3c7;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <div>
+                            <h4 style="font-weight: 700; margin: 0; color: #171717; display: flex; align-items: center; gap: 0.5rem;">
+                                <span>Eliminar Productos del Catálogo</span>
+                                <span id="admin-prod-count" style="font-size: 0.75rem; background: #fef3c7; color: #78350f; padding: 0.2rem 0.55rem; border-radius: 9999px; font-weight: 600;">0 productos</span>
+                            </h4>
+                            <p style="font-size: 0.75rem; color: #737373; margin-top: 0.25rem;">Hacé clic en el botón "Eliminar" del producto que deseas quitar.</p>
+                        </div>
+                        <button type="button" onclick="resetDefaultProducts()" class="btn-reset" title="Restablecer productos iniciales">🔄 Restablecer iniciales</button>
+                    </div>
+                    <div style="position: relative; margin-bottom: 0.85rem;">
+                        <span style="position: absolute; left: 0.85rem; top: 0.8rem; color: #a3a3a3; font-size: 0.85rem;">🔍</span>
+                        <input type="text" id="admin-prod-search" oninput="renderAdminProductList(this.value)" placeholder="Buscar producto en la lista..." style="padding-left: 2.25rem; font-size: 0.85rem;">
+                    </div>
+                    <div id="admin-product-list" style="max-height: 18rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.65rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT CON FIREBASE FIRESTORE CONFIGURADO Y CONECTADO -->
+    <script>
+        // CONFIGURACIÓN DE FIREBASE (Tus credenciales reales)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBlrvTPBtwsdJTZaGBRcoaUGGM-H4zR9LM",
+            authDomain: "el-baul-magico-4d2ef.firebaseapp.com",
+            projectId: "el-baul-magico-4d2ef",
+            storageBucket: "el-baul-magico-4d2ef.firebasestorage.app",
+            messagingSenderId: "149037599964",
+            appId: "1:149037599964:web:4e55a139796908d6d5f819",
+            measurementId: "G-DWE91NZ9JP"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const defaultProducts = [
+            { id: "1", name: "Smartphone Pro Max 5G", category: "Tecnología", price: 389990, badge: "Más Vendido", image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=80" },
+            { id: "2", name: "Auriculares Inalámbricos", category: "Tecnología", price: 45990, badge: "Oferta", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80" },
+            { id: "3", name: "Smart TV 50\" 4K UHD", category: "Tecnología", price: 299990, badge: "Nuevo", image: "https://images.unsplash.com/photo-1593784991095-a205069470b6?auto=format&fit=crop&w=600&q=80" },
+            { id: "4", name: "Juego de Sábanas de Lujo", category: "Blanquería", price: 42990, badge: "Popular", image: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=600&q=80" },
+            { id: "5", name: "Acolchado Soft Estampado", category: "Blanquería", price: 54990, badge: "Recomendado", image: "https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&w=600&q=80" },
+            { id: "6", name: "Juego de Toallas", category: "Blanquería", price: 22990, badge: "", image: "https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=600&q=80" },
+            { id: "7", name: "Vajilla de Cerámica", category: "Bazar", price: 68990, badge: "Exclusivo", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80" },
+            { id: "8", name: "Set de Cuchillos Pro", category: "Bazar", price: 31990, badge: "", image: "https://images.unsplash.com/photo-1593618998160-e34014e67546?auto=format&fit=crop&w=600&q=80" }
+        ];
+
+        let products = [];
+        let cart = JSON.parse(localStorage.getItem('baul_cart')) || [];
+        let currentFilter = 'Todos';
+        let adminConfig = JSON.parse(localStorage.getItem('baul_config')) || { user: 'admin', pass: '1234', whatsapp: '5491112345678' };
+
+        let clickCount = 0;
+        let clickTimer = null;
+        
+        function handleLogoTripleClick() {
+            clickCount++;
+            if (clickCount === 1) {
+                clickTimer = setTimeout(() => { clickCount = 0; }, 600);
+            } else if (clickCount === 3) {
+                clearTimeout(clickTimer);
+                clickCount = 0;
+                openAdminLogin();
+            }
+        }
+
+        document.getElementById('logo-container').addEventListener('click', handleLogoTripleClick);
+        document.getElementById('footer-logo-container').addEventListener('click', handleLogoTripleClick);
+
+        async function init() {
+            updateCartUI();
+            await loadProductsFromFirestore();
+            loadSettingsFromFirestore();
+        }
+
+        // CARGAR PRODUCTOS DESDE FIRESTORE
+        async function loadProductsFromFirestore() {
+            try {
+                const snapshot = await db.collection('products').get();
+                if (snapshot.empty) {
+                    await resetDefaultProducts(true);
+                } else {
+                    products = [];
+                    snapshot.forEach(doc => {
+                        products.push({ id: doc.id, ...doc.data() });
+                    });
+                    renderProducts();
+                    renderAdminProductList();
+                }
+            } catch (e) {
+                console.log("Error cargando de Firestore, usando caché local:", e);
+                const saved = localStorage.getItem('baul_products');
+                products = saved ? JSON.parse(saved) : defaultProducts;
+                renderProducts();
+                renderAdminProductList();
+            }
+        }
+
+        async function loadSettingsFromFirestore() {
+            try {
+                const doc = await db.collection('config').doc('main').get();
+                if (doc.exists) {
+                    adminConfig = { ...adminConfig, ...doc.data() };
+                }
+            } catch(e) { console.log("Error cargando config:", e); }
+        }
+
+        function renderProducts(filteredList = null) {
+            const grid = document.getElementById('product-grid');
+            const listToRender = filteredList || (currentFilter === 'Todos' ? products : products.filter(p => p.category === currentFilter));
+            
+            grid.innerHTML = listToRender.map(p => `
+                <div class="prod-card">
+                    <div>
+                        <div class="prod-img-box">
+                            ${p.badge ? `<span class="prod-badge-tag">${p.badge}</span>` : ''}
+                            <img src="${p.image}" alt="${p.name}">
+                        </div>
+                        <span class="prod-cat">${p.category}</span>
+                        <h3 class="prod-name">${p.name}</h3>
+                        <div class="prod-price">$${Number(p.price).toLocaleString('es-AR')}</div>
+                    </div>
+                    <div class="prod-actions">
+                        <button onclick="addToCart('${p.id}')" class="btn-add">🛒 <span>Añadir</span></button>
+                        <button onclick="buyDirectWhatsApp('${p.name}', ${p.price})" class="btn-w-icon" title="Consultar por WhatsApp">💬</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterProducts(category) {
+            currentFilter = category;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.textContent.trim() === category) { btn.classList.add('active'); } else { btn.classList.remove('active'); }
+            });
+            renderProducts();
+        }
+
+        function addToCart(id) {
+            const product = products.find(p => String(p.id) === String(id));
+            if (!product) return;
+            const existing = cart.find(item => String(item.id) === String(id));
+            if (existing) { existing.quantity++; } else { cart.push({ ...product, quantity: 1 }); }
+            saveCart();
+            updateCartUI();
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(item => String(item.id) !== String(id));
+            saveCart();
+            updateCartUI();
+        }
+
+        function updateQuantity(id, change) {
+            const item = cart.find(i => String(i.id) === String(id));
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) { removeFromCart(id); } else { saveCart(); updateCartUI(); }
+            }
+        }
+
+        function saveCart() { localStorage.setItem('baul_cart', JSON.stringify(cart)); }
+
+        function updateCartUI() {
+            const badge = document.getElementById('cart-badge');
+            const totalItems = cart.reduce((sum, i) => sum + i.quantity, 0);
+            if (totalItems > 0) { badge.textContent = totalItems; badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
+
+            const container = document.getElementById('cart-items');
+            const totalPrice = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            document.getElementById('cart-total').textContent = `$${totalPrice.toLocaleString('es-AR')}`;
+
+            if (cart.length === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 3rem 0; color: #a3a3a3;"><span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">🛍️</span><p>Tu carrito está vacío</p></div>`;
+                return;
+            }
+
+            container.innerHTML = cart.map(item => `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 0; border-bottom: 1px solid #fef3c7; gap: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <img src="${item.image}" style="width: 3.5rem; height: 3.5rem; object-fit: cover; border-radius: 0.5rem;">
+                        <div>
+                            <h4 style="font-weight: 700; font-size: 0.875rem; color: #171717; max-width: 9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</h4>
+                            <p style="font-size: 0.75rem; color: #78350f; font-weight: 600;">$${Number(item.price).toLocaleString('es-AR')}</p>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+                                <button onclick="updateQuantity('${item.id}', -1)" style="width: 1.25rem; height: 1.25rem; background: #fef3c7; border: none; border-radius: 0.25rem; cursor: pointer; font-weight: bold;">-</button>
+                                <span style="font-size: 0.75rem; font-weight: 600;">${item.quantity}</span>
+                                <button onclick="updateQuantity('${item.id}', 1)" style="width: 1.25rem; height: 1.25rem; background: #fef3c7; border: none; border-radius: 0.25rem; cursor: pointer; font-weight: bold;">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="removeFromCart('${item.id}')" class="btn-delete" title="Eliminar producto">🗑️ <span>Quitar</span></button>
+                </div>
+            `).join('');
+        }
+
+        function toggleCart() { document.getElementById('cart-drawer').classList.toggle('hidden'); }
+        function toggleSearchModal() { document.getElementById('search-modal').classList.toggle('hidden'); }
+        
+        function checkoutWhatsApp() {
+            if (cart.length === 0) return;
+            let msg = "Hola! Quiero realizar un pedido:%0A";
+            cart.forEach(i => { msg += `- ${i.quantity}x ${i.name} ($${(i.price*i.quantity).toLocaleString('es-AR')})%0A`; });
+            window.open(`https://wa.me/${adminConfig.whatsapp}?text=${msg}`, '_blank');
+        }
+        
+        function buyDirectWhatsApp(name, price) {
+            window.open(`https://wa.me/${adminConfig.whatsapp}?text=Hola,%20me%20interesa%20comprar%20${name}%20por%20$${price}`, '_blank');
+        }
+
+        function handleSearch(q) {
+            const res = document.getElementById('search-results');
+            if(!q.trim()) { res.innerHTML = ''; return; }
+            const f = products.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
+            res.innerHTML = f.map(p => `<div onclick="buyDirectWhatsApp('${p.name}', ${p.price})" style="padding: 0.5rem; display: flex; justify-content: space-between; cursor: pointer; border-radius: 0.5rem;" onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background='transparent'"><span style="font-size:0.875rem; font-weight:600;">${p.name}</span><span style="font-size:0.875rem; color:#78350f; font-weight:700;">$${Number(p.price).toLocaleString('es-AR')}</span></div>`).join('') || '<p style="text-align:center; font-size:0.875rem; color:#737373;">Sin resultados</p>';
+        }
+
+        function showToast(message, type = 'info') {
+            let toast = document.getElementById('toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast';
+                document.body.appendChild(toast);
+            }
+            toast.className = `toast-notification toast-${type} show`;
+            const icon = type === 'success' ? '✅' : (type === 'danger' ? '❌' : 'ℹ');
+            toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        function openAdminLogin() { 
+            document.getElementById('admin-user-input').value = '';
+            document.getElementById('admin-pass-input').value = '';
+            document.getElementById('admin-login-modal').classList.remove('hidden'); 
+        }
+
+        function closeAdminLogin() { document.getElementById('admin-login-modal').classList.add('hidden'); }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const userInput = document.getElementById('admin-user-input').value.trim();
+            const passInput = document.getElementById('admin-pass-input').value;
+
+            if(userInput === adminConfig.user && passInput === adminConfig.pass) {
+                closeAdminLogin(); 
+                document.getElementById('admin-panel-modal').classList.remove('hidden');
+                document.getElementById('set-username').value = adminConfig.user;
+                document.getElementById('set-whatsapp').value = adminConfig.whatsapp;
+                document.getElementById('admin-prod-search').value = '';
+                renderAdminProductList();
+                showToast('Ingreso autorizado al panel de administración', 'success');
+            } else { 
+                alert('Credenciales incorrectas. Verifique usuario y contraseña.'); 
+            }
+        }
+
+        function closeAdminPanel() { document.getElementById('admin-panel-modal').classList.add('hidden'); }
+
+        function renderAdminProductList(filterQuery = '') {
+            const listContainer = document.getElementById('admin-product-list');
+            if (!listContainer) return;
+
+            document.getElementById('admin-prod-count').textContent = `${products.length} producto${products.length === 1 ? '' : 's'}`;
+            const query = (filterQuery || document.getElementById('admin-prod-search').value).trim().toLowerCase();
+            const listToRender = query ? products.filter(p => p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query)) : products;
+
+            if (products.length === 0) {
+                listContainer.innerHTML = `<div style="text-align: center; padding: 2.5rem 1rem; color: #737373; background: #fffbeb; border-radius: 0.75rem;"><span style="font-size: 2.25rem;">📦</span><p style="font-weight: 700; margin-top: 0.5rem;">No hay productos en el catálogo</p><button type="button" onclick="resetDefaultProducts()" class="btn-reset" style="margin-top: 0.85rem;">🔄 Restablecer iniciales</button></div>`;
+                return;
+            }
+
+            listContainer.innerHTML = listToRender.map(p => `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; background: #ffffff; border-radius: 0.65rem; border: 1px solid #fde68a; gap: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 0; flex-grow: 1;">
+                        <img src="${p.image}" style="width: 2.75rem; height: 2.75rem; object-fit: cover; border-radius: 0.35rem; flex-shrink: 0;">
+                        <div style="min-width: 0;">
+                            <h5 style="font-size: 0.875rem; font-weight: 700; color: #171717; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name}</h5>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem;">
+                                <span style="font-size: 0.7rem; color: #78350f; font-weight: 600; background: #fef3c7; padding: 0.15rem 0.45rem; border-radius: 0.25rem;">${p.category}</span>
+                                <span style="font-size: 0.8rem; color: #171717; font-weight: 700;">$${Number(p.price).toLocaleString('es-AR')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="deleteProductFromAdmin('${p.id}')" class="btn-delete" title="Eliminar">🗑️ <span>Eliminar</span></button>
+                </div>
+            `).join('');
+        }
+
+        // ELIMINAR DE FIRESTORE
+        async function deleteProductFromAdmin(id) {
+            if (!confirm('¿Estás seguro de eliminar este producto de la nube?')) return;
+            try {
+                await db.collection('products').doc(String(id)).delete();
+                products = products.filter(p => String(p.id) !== String(id));
+                cart = cart.filter(item => String(item.id) !== String(id));
+                saveCart();
+                updateCartUI();
+                renderProducts();
+                renderAdminProductList();
+                showToast('Producto eliminado de la base de datos.', 'danger');
+            } catch(e) {
+                console.error("Error al eliminar:", e);
+                alert('No se pudo eliminar el producto.');
+            }
+        }
+
+        // RESTABLECER PRODUCTOS INICIALES EN FIRESTORE
+        async function resetDefaultProducts(isAutomatic = false) {
+            if (!isAutomatic && !confirm('¿Deseas restablecer los 8 productos originales en Firestore?')) return;
+            try {
+                const snapshot = await db.collection('products').get();
+                const batch = db.batch();
+                snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+
+                products = [];
+                for (let prod of defaultProducts) {
+                    const docRef = db.collection('products').doc(String(prod.id));
+                    await docRef.set(prod);
+                    products.push(prod);
+                }
+
+                if (!isAutomatic) {
+                    renderProducts();
+                    renderAdminProductList();
+                    showToast('Catálogo restablecido con éxito.', 'success');
+                }
+            } catch(e) {
+                console.error("Error al restablecer:", e);
+            }
+        }
+
+        // AGREGAR PRODUCTO A FIRESTORE
+        async function handleAddProduct(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-prod-name').value.trim();
+            const category = document.getElementById('new-prod-cat').value;
+            const price = Number(document.getElementById('new-prod-price').value);
+            const fileInput = document.getElementById('new-prod-file');
+            const file = fileInput.files[0];
+            
+            if (!name || isNaN(price) || price < 0 || !file) {
+                alert('Complete todos los campos correctamente.');
+                return;
+            }
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Subiendo a la nube...';
+
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                try {
+                    const newProdData = { name, category, price, badge: 'Nuevo', image: evt.target.result };
+                    const docRef = await db.collection('products').add(newProdData);
+                    
+                    const addedProduct = { id: docRef.id, ...newProdData };
+                    products.unshift(addedProduct);
+                    
+                    renderProducts();
+                    renderAdminProductList();
+                    
+                    document.getElementById('new-prod-name').value = '';
+                    document.getElementById('new-prod-price').value = '';
+                    fileInput.value = '';
+                    showToast('¡Producto guardado y sincronizado en la nube!', 'success');
+                } catch(err) {
+                    console.error("Error al subir:", err);
+                    alert('Error al guardar en Firestore.');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Añadir Producto';
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function saveSettings(e) {
+            e.preventDefault();
+            const newUser = document.getElementById('set-username').value.trim() || adminConfig.user;
+            const p = document.getElementById('set-password').value;
+            const newWhatsapp = document.getElementById('set-whatsapp').value.trim() || adminConfig.whatsapp;
+            
+            adminConfig.user = newUser;
+            if(p) adminConfig.pass = p;
+            adminConfig.whatsapp = newWhatsapp;
+
+            try {
+                await db.collection('config').doc('main').set(adminConfig);
+                showToast('Configuración guardada en Firestore.', 'success');
+            } catch(e) {
+                console.error("Error guardando configuración:", e);
+            }
+        }
+
+        window.onload = init;
+    </script>
+    <div id="toast" class="toast-notification"></div>
+</body>
+</html>
